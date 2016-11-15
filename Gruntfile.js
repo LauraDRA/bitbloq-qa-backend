@@ -64,7 +64,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-simple-mocha');
 
 	grunt.registerTask('test', 'Protractor e2e funcional test (Selenium) task.', function() {
-		var env = grunt.option('env') || 'local',
+		var env = grunt.option('env'),
 		 		suite = grunt.option('suite') || 'all',
 				tasks = ['jshint'];
 
@@ -88,7 +88,9 @@ module.exports = function(grunt) {
 		if (env === 'next') {
 			tasks.push('simplemocha:'+suite);
 		}
-
+		if (env === undefined) {
+			console.error('You must specified the environment');
+		}
 		grunt.task.run(tasks);
 
 	});
