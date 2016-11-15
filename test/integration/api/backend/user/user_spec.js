@@ -201,6 +201,8 @@ describe('User test', function() {
         return chakram.wait();
     });
 
+//GET /banned
+
     it('Get banned users', function() {
         return request.postBackend('/auth/local',200,config.adminLogin).then(function(response) {
             var userRandom = user.generateRandomUser();
@@ -389,6 +391,29 @@ describe('User test', function() {
 
     it('Create a user - without info', function() {
         return request.postBackend('/user/',400,{}).then(function() {
+            return chakram.wait();
+        });
+    });
+
+//POST /forgot
+
+    it('Send a recovery password email - correct email', function() {
+      var userRandom = user.generateRandomUser();
+      return request.postBackend('/user',200,userRandom).then(function() {
+        return request.postBackend('/user/forgot',200,{'email':userRandom.email}).then(function() {
+          return chakram.wait();
+        });
+      });
+    });
+
+    it.skip('Send a recovery password email - the email doesnt exist', function() {
+        return request.postBackend('/user/forgot',200,{'email':'userRandomFake@fakefake.es'}).then(function() {
+            return chakram.wait();
+        });
+    });
+
+    it.skip('Send a recovery password email - json parameter is incorrect', function() {
+        return request.postBackend('/user/forgot',200,{'email':'userRandomFake@fakefake.es'}).then(function() {
             return chakram.wait();
         });
     });
