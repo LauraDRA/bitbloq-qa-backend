@@ -413,7 +413,7 @@ describe('User test', function() {
     });
 
     it.skip('Send a recovery password email - json parameter is incorrect', function() {
-        return request.postBackend('/user/forgot',200,{'email':'userRandomFake@fakefake.es'}).then(function() {
+        return request.postBackend('/user/forgot',200,{'em':'userRandomFake@fakefake.es'}).then(function() {
             return chakram.wait();
         });
     });
