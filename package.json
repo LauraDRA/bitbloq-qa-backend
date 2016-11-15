@@ -1,0 +1,40 @@
+{
+    "name": "qa-api-bitbloq",
+    "version": "1.0.0",
+    "description": "test proyect to bitbloq-angularjs",
+    "license": "-",
+    "contributors": [
+        "Laura del Río <laura.delrio@bq.com>",
+        "Tom Calvo <tomas.calvo@bq.com>",
+        "Natalia Gomez <natalia.gomez@bq.com>",
+        "Álvaro Sánchez <alvaro.sanchez@bq.com>"
+    ],
+    "devDependencies": {
+        "grunt-contrib-clean": "^0.7.0",
+        "grunt-contrib-jshint": "^0.12.0",
+        "grunt-simple-mocha": "^0.4.1",
+        "grunt-newer": "^1.1.1",
+        "grunt-release": "^0.13.0",
+        "jshint-stylish": "^2.1.0",
+        "load-grunt-tasks": "^3.4.0",
+        "lodash": "^4.2.1",
+        "testlink-connect-proxy": "^0.5.4",
+        "grunt-cli": "^0.1.13",
+        "time-grunt": "^1.3.0",
+        "jquery": "^3.1.0"
+    },
+    "engines": {
+        "node": ">=4.2.6",
+        "npm": ">=2.4.1"
+    },
+
+    "dependencies": {
+        "grunt": "^0.4.5",
+        "grunt-exec": "^0.4.6",
+        "mocha": "3.0.2",
+        "chakram": "^1.4.0",
+        "mochawesome": "^1.5.2",
+        "mongodb": "^2.2.10",
+        "yarg": "^6.30"
+    }
+}
