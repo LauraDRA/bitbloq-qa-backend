@@ -35,6 +35,6 @@
         "chakram": "^1.4.0",
         "mochawesome": "^1.5.2",
         "mongodb": "^2.2.10",
-        "yarg": "^6.30"
+        "yargs": "^1.0.8"
     }
 }
