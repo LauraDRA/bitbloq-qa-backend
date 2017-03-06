@@ -1,47 +1,38 @@
 'use strict';
-var chakram = require('chakram'),
-    expect = chakram.expect,
-    argv = require('yargs').argv;
+var chakram = require('chakram');
 
 var Request = function() {
 
-    this.config = require('../../../config/config.json');
 
-    this.postBackend =function(path,status,params,headers) {
-      return chakram.post(this.config.env[argv.env].backend+path,params,headers).then(function(response) {
-         expect(response).to.have.status(status);
+    this.post =function(url,params,headers) {
+      return chakram.post(url,params,headers).then(function(response) {
          return response;
       });
     };
 
-    this.getBackend =function(path,status,headers) {
-      return chakram.get(this.config.env[argv.env].backend+path,headers).then(function(response) {
-        expect(response).to.have.status(status);
+    this.get =function(url,headers) {
+      return chakram.get(url,headers).then(function(response) {
         return response;
       });
     };
 
-    this.headBackend =function(path,status,params,headers) {
-      return chakram.head(this.config.env[argv.env].backend+path,params,headers).then(function(response) {
-        expect(response).to.have.status(status);
+    this.head =function(url,params,headers) {
+      return chakram.head(url,params,headers).then(function(response) {
         return response;
       });
     };
 
-    this.putBackend = function(path,status,params,headers) {
-      return chakram.put(this.config.env[argv.env].backend+path,params,headers).then(function(response) {
-        expect(response).to.have.status(status);
+    this.put = function(url,params,headers) {
+      return chakram.put(url,params,headers).then(function(response) {
         return response;
       });
     };
 
-    this.postCompiler =function(path,status,params,headers) {
-      return chakram.post(this.config.env[argv.env].compiler+path,params,headers).then(function(response) {
-        expect(response).to.have.status(status);
-         return response;
+    this.delete = function(url,headers) {
+      return chakram.delete(url,{},headers).then(function(response){
+        return response;
       });
     };
-
 
 };
 module.exports = Request;

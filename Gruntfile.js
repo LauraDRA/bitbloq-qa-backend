@@ -2,6 +2,9 @@
 
 
 module.exports = function(grunt) {
+	require('load-grunt-tasks')(grunt);
+	grunt.loadNpmTasks('grunt-exec');
+
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 		jshint: {
@@ -21,7 +24,6 @@ module.exports = function(grunt) {
 		},
 		simplemocha: {
 			all: { options: {
-							fullTrace: true,
 							timeout: 60000,
 							reporter: 'mochawesome',
 							reporterOptions: {
@@ -32,7 +34,6 @@ module.exports = function(grunt) {
 			user: { options: {
 							timeout: 60000,
 							reporter: 'mochawesome',
-							fullTrace: true,
 							reporterOptions: {
 								reportName: 'mochawesome-user',
 							}
@@ -41,7 +42,6 @@ module.exports = function(grunt) {
 			project: { options: {
 								timeout: 60000,
 								reporter: 'mochawesome',
-								fullTrace: true,
 								reporterOptions: {
 									reportName: 'mochawesome-project',
 								}
@@ -50,13 +50,12 @@ module.exports = function(grunt) {
 			compile: { options: {
 								timeout: 60000,
 								reporter: 'mochawesome',
-								fullTrace: true,
 								reporterOptions: {
 									reportName: 'mochawesome-compile',
 								}
 							},
-							src: ['test/integration/api/compiler/compile/*.js']}
-		}
+							src: ['test/integration/api/compiler/compile/*.js']},
+				}
 	});
 
 	grunt.loadNpmTasks('grunt-contrib-jshint');
@@ -70,7 +69,6 @@ module.exports = function(grunt) {
 
 		tasks.push('clean:target');
 		if (env === 'local') {
-
 			if (suite === 'all') {
 				tasks.push('simplemocha:user');
 				tasks.push('simplemocha:project');
@@ -81,15 +79,20 @@ module.exports = function(grunt) {
 					tasks.push('simplemocha:'+suite);
 				}
 			}
-		}
-		if (env === 'qa') {
-			tasks.push('simplemocha:'+suite);
-		}
-		if (env === 'next') {
-			tasks.push('simplemocha:'+suite);
-		}
-		if (env === undefined) {
-			console.error('You must specified the environment');
+		} else {
+			if (env === 'qa' || env === 'next') {
+				if (suite.includes('all')) {
+						tasks.push('simplemocha:user');
+						tasks.push('simplemocha:project');
+						tasks.push('simplemocha:compiler');
+				} else {
+					tasks.push('simplemocha:'+suite);
+				}
+			} else {
+				if (env === undefined) {
+					console.error('You must specified the environment');
+				}
+			}
 		}
 		grunt.task.run(tasks);
 
