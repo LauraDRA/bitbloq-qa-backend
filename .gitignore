@@ -4,8 +4,14 @@ node_modules/
 bower_components/
 *.log
 *~
+
 # Editor File Ignore
+.idea/
 *.sublime-project
 *.sublime-workspace
-mochawesome-reports/
+
+#configurations
 /test/config/
+
+#reports
+mochawesome-reports/
