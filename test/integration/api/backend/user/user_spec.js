@@ -4,8 +4,8 @@ var chakram = require('chakram'),
 
 var User = require('./user.js'),
     user = new User(),
-    RequestBackend = require('../../commons/requestBackend.js'),
-    request = new RequestBackend(),
+    RequestUser = require('../../commons/requestUser.js'),
+    request = new RequestUser(),
     ObjectID = require('mongodb').ObjectID,
     config = require('../../../../config/config.json');
 
@@ -16,16 +16,19 @@ describe('User test', function() {
 //HEAD /:username Check that the username exists in BBDD
     it('The username exists',function(){
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function() {
-            return request.head('/user/'+userRandom.username,200).then(function(response) {
-                expect(response).to.have.header('exists','true');
+        return request.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.checkUsername(userRandom.username).then(function(response2) {
+                expect(response2).to.have.status(200);
+                expect(response2).to.have.header('exists','true');
                 return chakram.wait();
             });
         });
     });
 
     it('The username doesnt exist',function(){
-        return request.head('/user/userfakedoesntexist',204).then(function(response) {
+        return request.checkUsername('userfakedoesntexist').then(function(response) {
+            expect(response).to.have.status(204);
             expect(response).to.have.header('exists','false');
             return chakram.wait();
         });
@@ -33,19 +36,20 @@ describe('User test', function() {
     });
 
     it('The username has rare characters', function() {
-        return request.head('/user/pruebeci)()&64564¿*',204).then(function(response) {
+        return request.checkUsername('pruebeci)()&64564¿*').then(function(response) {
             expect(response).to.have.header('exists','false');
+            expect(response).to.have.status(204);
             return chakram.wait();
         });
-
     });
 
     it('The username is long', function() {
-        return request.head(
-        '/user/pruebeci)()&64564¿*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'+
+        return request.checkUsername(
+        'pruebeci)()&64564¿*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'+
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'+
-        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',204).then(function(response) {
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa').then(function(response) {
             expect(response).to.have.header('exists','false');
+            expect(response).to.have.status(204);
             return chakram.wait();
         });
 
@@ -54,13 +58,18 @@ describe('User test', function() {
 
 //HEAD /ban
     it('Ban an user', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
             var userRandom = user.generateRandomUser();
-            return request.post('/user',200,userRandom).then(function(response2) {
-                return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+response2.body.token}}).then(function(response3) {
-                    return request.head('/user/'+response3.body._id+'/ban',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(){
-                        return request.get('/user/banned',200).then(function(response4) {
-                            expect(response4.body[response4.body.length-1]._id).to.equal(response3.body._id);
+            return request.createUser(userRandom).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return request.getUserInfo(response2.body.token).then(function(response3) {
+                    expect(response3).to.have.status(200);
+                    return request.banUser(response3.body._id,response.body.token).then(function(response4){
+                        expect(response4).to.have.status(200);
+                        return request.getUserBanned().then(function(response5) {
+                            expect(response4).to.have.status(200);
+                            expect(response5.body[response5.body.length-1]._id).to.equal(response3.body._id);
                             id = response3.body._id;
                         });
                     });
@@ -70,10 +79,13 @@ describe('User test', function() {
     });
 
     it('Ban an user - A banned user', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
-            return request.head('/user/'+id+'/ban',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                return request.get('/user/banned',200).then(function(response4) {
-                    expect(response4.body[response4.body.length-1]._id).to.equal(id);
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.banUser(id,response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return request.getUserBanned().then(function(response3) {
+                    expect(response3).to.have.status(200);
+                    expect(response3.body[response3.body.length-1]._id).to.equal(id);
                     return chakram.wait();
                 });
             });
@@ -81,10 +93,13 @@ describe('User test', function() {
     });
 
     it('Ban an user - The user doesnt exist', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
             var idRandom = new ObjectID();
-            return request.head('/user/'+idRandom+'/ban',404,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                return request.get('/user/banned',200).then(function(response4) {
+            return request.banUser(idRandom,response.body.token).then(function(response2) {
+                expect(response2).to.have.status(404);
+                return request.getUserBanned().then(function(response4) {
+                    expect(response4).to.have.status(200);
                     expect(response4.body[response4.body.length-1]._id).not.to.equal(idRandom);
                     return chakram.wait();
                 });
@@ -95,20 +110,24 @@ describe('User test', function() {
     it('Ban an user - Invalid token', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         var idRandom = new ObjectID();
-        return request.head('/user/'+idRandom+'/ban',401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
+        return request.banUser(idRandom,token).then(function(response) {
+            expect(response).to.have.status(401);
             return chakram.wait();
         });
     });
 
 //HEAD /unban
     it('Unban an user', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
-            return request.head('/user/'+id+'/unban',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                return request.get('/user/banned',200).then(function(response4) {
-                    if (response4.body.length>=1) {
-                      expect(response4.body[response4.body.length-1]._id).not.to.equal(id);
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.unbanUser(id,response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return request.getUserBanned().then(function(response3) {
+                    expect(response3).to.have.status(200);
+                    if (response3.body.length>=1) {
+                      expect(response3.body[response3.body.length-1]._id).not.to.equal(id);
                     } else {
-                      expect(response4).to.have.json([]);
+                      expect(response3).to.have.json([]);
                     }
                     return chakram.wait();
                 });
@@ -117,13 +136,16 @@ describe('User test', function() {
     });
 
     it('Unban an user - unbanned user', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
-            return request.head('/user/'+id+'/unban',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                return request.get('/user/banned',200).then(function(response4) {
-                    if (response4.body.length>=1) {
-                      expect(response4.body[response4.body.length-1]._id).not.to.equal(id);
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.unbanUser(id,response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return request.getUserBanned().then(function(response3) {
+                    expect(response3).to.have.status(200);
+                    if (response3.body.length>=1) {
+                      expect(response3.body[response3.body.length-1]._id).not.to.equal(id);
                     } else {
-                      expect(response4).to.have.json([]);
+                      expect(response3).to.have.json([]);
                     }
                     return chakram.wait();
                 });
@@ -132,14 +154,17 @@ describe('User test', function() {
     });
 
     it('Unban an user - The user doesnt exist', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
+        return request.login(config.adminLogin).then(function(response) {
             var idRandom = new ObjectID();
-            return request.head('/user/'+idRandom+'/unban',404,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                return request.get('/user/banned',200).then(function(response4) {
-                    if (response4.body.length>=1) {
-                      expect(response4.body[response4.body.length-1]._id).not.to.equal(idRandom);
+            expect(response).to.have.status(200);
+            return request.unbanUser(idRandom,response.body.token).then(function(response2) {
+                expect(response2).to.have.status(404);
+                return request.getUserBanned().then(function(response3) {
+                    expect(response3).to.have.status(200);
+                    if (response3.body.length>=1) {
+                      expect(response3.body[response3.body.length-1]._id).not.to.equal(idRandom);
                     } else {
-                      expect(response4).to.have.json([]);
+                      expect(response3).to.have.json([]);
                     }
                     return chakram.wait();
                 });
@@ -150,7 +175,8 @@ describe('User test', function() {
     it('Unban an user - Invalid token', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         var idRandom = new ObjectID();
-        return request.head('/user/'+idRandom+'/unban',401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
+        return request.unbanUser(idRandom,token).then(function(response) {
+            expect(response).to.have.status(401);
             return chakram.wait();
         });
     });
@@ -158,8 +184,10 @@ describe('User test', function() {
 // GET /
 
     it('Get list of users', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
-            return request.get('/user',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response2) {
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.getListOfUser(response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
                 expect(response2.body).not.to.have.json([]);
                 return chakram.wait();
             });
@@ -168,9 +196,10 @@ describe('User test', function() {
 
     it('Get list of users - invalid token', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
-        return request.post('/auth/local',200,config.adminLogin).then(function() {
-            return request.get('/user',401,{headers:{'Authorization':'Bearer '+token}}).then(function(response2) {
-                expect(response2.body).not.to.have.json([]);
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.getListOfUser(token).then(function(response2) {
+                expect(response2).to.have.status(401);
                 return chakram.wait();
             });
         });
@@ -179,9 +208,12 @@ describe('User test', function() {
 //GET /email/:email Return id of user
     it('Get id at email - the user exists', function() {
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function(res) {
-          return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+res.body.token}}).then(function(res2) {
-              return request.get('/user/email/'+encodeURIComponent(userRandom.email),200).then(function(res3) {
+        return request.createUser(userRandom).then(function(res) {
+          expect(res).to.have.status(200);
+          return request.getUserInfo(res.body.token).then(function(res2) {
+              expect(res2).to.have.status(200);
+              return request.getUserByEmail(encodeURIComponent(userRandom.email)).then(function(res3) {
+                  expect(res3).to.have.status(200);
                   expect(res3.body.user).to.equal(res2.body._id);
                   return chakram.wait();
               });
@@ -190,27 +222,36 @@ describe('User test', function() {
     });
 
     it('Get id at email - the user doesnt exist', function() {
-        var response = request.get('/user/email/'+encodeURIComponent('emailfakefake@emailake.es'),400);
-        expect(response).to.have.json('error','This email is not registered');
-        return chakram.wait();
+        return request.getUserByEmail(encodeURIComponent('emailfakefake@emailake.es')).then(function(response) {
+            expect(response).to.have.status(400);
+            expect(response).to.have.json('error','This email is not registered');
+            return chakram.wait();
+        });
     });
 
     it('Get id at email - the email is incorrect', function() {
-        var response = request.get('/user/email/'+encodeURIComponent('emailfakefakeemailake.es'),400);
-        expect(response).to.have.json('error','This email is not registered');
-        return chakram.wait();
+        return request.getUserByEmail(encodeURIComponent('emailfakefakeemailake.es')).then(function(response) {
+            expect(response).to.have.status(400);
+            expect(response).to.have.json('error','This email is not registered');
+            return chakram.wait();
+        });
     });
 
 //GET /banned
 
     it('Get banned users', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
             var userRandom = user.generateRandomUser();
-            return request.post('/user',200,userRandom).then(function(response2) {
-                return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+response2.body.token}}).then(function(response3) {
-                    return request.head('/user/'+response3.body._id+'/ban',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(){
-                        return request.get('/user/banned',200).then(function() {
-                            expect(response).not.to.have.json([]);
+            return request.createUser(userRandom).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return request.getUserInfo(response2.body.token).then(function(response3) {
+                    expect(response3).to.have.status(200);
+                    return request.banUser(response3.body._id,response.body.token).then(function(response4){
+                        expect(response4).to.have.status(200);
+                        return request.getUserBanned().then(function(response5) {
+                            expect(response5).to.have.status(200);
+                            expect(response5).not.to.have.json([]);
                         });
                     });
                 });
@@ -222,8 +263,10 @@ describe('User test', function() {
 
     it('Get user information - new User', function() {
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function(response) {
-            return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response2) {
+        return request.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.getUserInfo(response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
                 expect(response2.body.email).to.equal(userRandom.email);
                 return chakram.wait();
             });
@@ -231,8 +274,10 @@ describe('User test', function() {
     });
 
     it('Get user information - old user', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
-            return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response2) {
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.getUserInfo(response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
                 expect(response2.body.email).to.equal(config.adminLogin.email);
                 return chakram.wait();
             });
@@ -241,7 +286,8 @@ describe('User test', function() {
 
     it('Get user information - invalid token', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
-        return request.get('/user/me',401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
+        return request.getUserInfo(token).then(function(response) {
+            expect(response).to.have.status(401);
             return chakram.wait();
         });
     });
@@ -250,9 +296,12 @@ describe('User test', function() {
 
     it('Get user profile - new user', function() {
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function(response) {
-            return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response2) {
-                return request.get('/user/'+response2.body._id,200).then(function(response3) {
+        return request.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.getUserInfo(response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return request.getUserProfile(response2.body._id).then(function(response3) {
+                    expect(response3).to.have.status(200);
                     expect(response3.body.username).to.equal(userRandom.username);
                     expect(response3.body.role).to.equal('user');
                     return chakram.wait();
@@ -262,9 +311,12 @@ describe('User test', function() {
     });
 
     it('Get user profile - old user', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
-            return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response2) {
-                return request.get('/user/'+response2.body._id,200).then(function(response3) {
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.getUserInfo(response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return request.getUserProfile(response2.body._id).then(function(response3) {
+                    expect(response3).to.have.status(200);
                     expect(response3.body.username).to.equal(response2.body.username);
                     expect(response3.body.role).to.equal('admin');
                     return chakram.wait();
@@ -275,7 +327,8 @@ describe('User test', function() {
 
     it('Get user profile - The user doesnt exist', function() {
         var idRandom = new ObjectID();
-        return request.get('/user/'+idRandom,404).then(function() {
+        return request.getUserProfile(idRandom).then(function(response) {
+            expect(response).to.have.status(404);
             return chakram.wait();
         });
     });
@@ -284,11 +337,14 @@ describe('User test', function() {
 
     it('Update user data - new user', function() {
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function(response) {
+        return request.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
             userRandom.lastName = 'Changed';
-            return request.put('/user/me',200,userRandom,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response2) {
-                    var userMod = response2.body;
+            return request.updateUser(userRandom,response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return request.getUserInfo(response.body.token).then(function(response3) {
+                    expect(response3).to.have.status(200);
+                    var userMod = response3.body;
                     expect(userMod.lastName).to.equal(userRandom.lastName);
                 });
             });
@@ -296,16 +352,21 @@ describe('User test', function() {
     });
 
     it('Update user data - old user', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
-            return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response2) {
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.getUserInfo(response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
                 var user = response2.body;
                 user.lastName = 'Changed'+Number(new Date()) + Math.floor((Math.random() * 100000) + 1);
-                return request.put('/user/me',200,user,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                    return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response3) {
-                        var userMod = response3.body;
+                return request.updateUser(user,response.body.token).then(function(response3) {
+                    expect(response3).to.have.status(200);
+                    return request.getUserInfo(response.body.token).then(function(response4) {
+                        expect(response4).to.have.status(200);
+                        var userMod = response4.body;
                         expect(userMod.lastName).to.equal(user.lastName);
                         user.lastName = 'Test';
-                        return request.put('/user/me',200,user,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
+                        return request.getUserInfo(response.body.token).then(function(response5) {
+                            expect(response5).to.have.status(200);
                             return chakram.wait();
                         });
                     });
@@ -317,7 +378,8 @@ describe('User test', function() {
     it('Update user data - invalid token', function() {
         var userRandom = user.generateRandomUser();
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
-        return request.put('/user/me',401,userRandom,{headers:{'Authorization':'Bearer '+token}}).then(function() {
+        return request.updateUser(userRandom,token).then(function(response) {
+            expect(response).to.have.status(401);
             return chakram.wait();
         });
     });
@@ -326,13 +388,17 @@ describe('User test', function() {
 
     it('Update user password (Logged) - new user', function() {
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function(response) {
+        return request.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
             var password = {
               newPassword:'aaaaaa'
             };
-            return request.put('/user/me/password',200,password,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                return request.post('/auth/local',200,{email:userRandom.email,password:password.newPassword}).then(function(response2) {
-                    return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+response2.body.token}}).then(function() {
+            return request.updatePassword(password,response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return request.login({email:userRandom.email,password:password.newPassword}).then(function(response3) {
+                    expect(response3).to.have.status(200);
+                    return request.getUserInfo(response3.body.token).then(function(response4) {
+                        expect(response4).to.have.status(200);
                         chakram.wait();
                     });
                 });
@@ -341,14 +407,19 @@ describe('User test', function() {
     });
 
     it('Update user password (Logged) - old user', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
+        return request.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
             var password = {
               newPassword:'aaaaaa'
             };
-            return request.put('/user/me/password',200,password,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                return request.post('/auth/local',200,{email:config.adminLogin.email,password:password.newPassword}).then(function(response2) {
-                    return request.get('/user/me',200,{headers:{'Authorization':'Bearer '+response2.body.token}}).then(function() {
-                        return request.put('/user/me/password',200,{newPassword:config.adminLogin.password},{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
+            return request.updatePassword(password,response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return request.login({email:config.adminLogin.email,password:password.newPassword}).then(function(response3) {
+                    expect(response3).to.have.status(200);
+                    return request.getUserInfo(response3.body.token).then(function(response4) {
+                        expect(response4).to.have.status(200);
+                        return request.updatePassword({newPassword:config.adminLogin.password},response3.body.token).then(function(response5) {
+                            expect(response5).to.have.status(200);
                             chakram.wait();
                         });
                     });
@@ -362,7 +433,8 @@ describe('User test', function() {
           newPassword:'aaaaaa'
         };
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
-        return request.put('/user/me/password',401,password,{headers:{'Authorization':'Bearer '+token}}).then(function() {
+        return request.updatePassword(password,token).then(function(response) {
+            expect(response).to.have.status(401);
             return chakram.wait();
         });
     });
@@ -371,8 +443,10 @@ describe('User test', function() {
 
     it('Create a user - valid info', function() {
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function() {
-            return request.post('/auth/local',200,{email:userRandom.email,password:userRandom.password}).then(function() {
+        return request.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.login({email:userRandom.email,password:userRandom.password}).then(function(response2) {
+                expect(response2).to.have.status(200);
                 return chakram.wait();
             });
         });
@@ -380,8 +454,10 @@ describe('User test', function() {
 
     it('Create a user - the user exists', function() {
       var userRandom = user.generateRandomUser();
-      return request.post('/user',200,userRandom).then(function() {
-          return request.post('/user',409,userRandom).then(function(response2) {
+      return request.createUser(userRandom).then(function(response) {
+          expect(response).to.have.status(200);
+          return request.createUser(userRandom).then(function(response2) {
+              expect(response2).to.have.status(409);
               expect(response2.body.errors.username.message).to.equal('The specified username is already in use.');
               expect(response2.body.errors.email.message).to.equal('The specified email address is already in use.');
               return chakram.wait();
@@ -390,7 +466,8 @@ describe('User test', function() {
     });
 
     it('Create a user - without info', function() {
-        return request.post('/user/',400,{}).then(function() {
+        return request.createUser({}).then(function(response) {
+            expect(response).to.have.status(400);
             return chakram.wait();
         });
     });
@@ -398,22 +475,26 @@ describe('User test', function() {
 //POST /forgot
 
     it('Send a recovery password email - correct email', function() {
-      var userRandom = user.generateRandomUser();
-      return request.post('/user',200,userRandom).then(function() {
-        return request.post('/user/forgot',200,{'email':userRandom.email}).then(function() {
-          return chakram.wait();
+        var userRandom = user.generateRandomUser();
+        return request.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
+            return request.forgotPass({'email':userRandom.email}).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return chakram.wait();
+            });
         });
-      });
     });
 
     it('Send a recovery password email - the email doesnt exist', function() {
-        return request.post('/user/forgot',200,{'email':'userRandomFake@fakefake.es'}).then(function() {
+        return request.forgotPass({'email':'userRandomFake@fakefake.es'}).then(function(response) {
+            expect(response).to.have.status(404);
             return chakram.wait();
         });
     });
 
     it('Send a recovery password email - json parameter is incorrect', function() {
-        return request.post('/user/forgot',200,{'em':'userRandomFake@fakefake.es'}).then(function() {
+        return request.forgotPass({'em':'userRandomFake@fakefake.es'}).then(function(response) {
+            expect(response).to.have.status(404);
             return chakram.wait();
         });
     });
