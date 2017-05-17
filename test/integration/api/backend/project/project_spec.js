@@ -1,8 +1,10 @@
 'use strict';
 var chakram = require('chakram'),
     expect = chakram.expect,
-    RequestBackend = require('../../commons/requestBackend.js'),
-    request = new RequestBackend(),
+    RequestProject = require('../../commons/requestProject.js'),
+    requestProject = new RequestProject(),
+    RequestUser = require('../../commons/requestUser.js'),
+    requestUser = new RequestUser(),
     User = require('../user/user.js'),
     user = new User(),
     Project = require('./project.js'),
@@ -15,22 +17,27 @@ describe('Project test', function() {
 //GET /  get project published
 
     it('Get project published - all params', function() {
-        return request.get('/project?count=*&page=0&query=%7B%22hardwareTags%22:%7B%22$all%22:%5B%22us%22%5D%7D%7D',200).then(function(response) {
+        return requestProject.getPublishProject('?count=*&page=0&query=%7B%22hardwareTags%22:%7B%22$all%22:%5B%22us%22%5D%7D%7D').then(function(response) {
+            expect(response).to.have.status(200);
             expect(response).not.have.to.json([]);
             return chakram.wait();
         });
     });
 
-    it('Get project published - without params', function() {
-        return request.get('/project',400).then(function() {
+    it.skip('Get project published - without params', function() {
+        return requestProject.getPublishProject('').then(function(response) {
+            expect(response).to.have.status(400);
             return chakram.wait();
         });
     });
 
-    it('Get project published - invalid params', function() {
-        return request.get('/project?p=0',400).then(function() {
-            return request.get('/project?cont=*',400).then(function() {
-                return request.get('/project?qery=%7B%22hardwareTags%22:%7B%22$all%22:%5B%22us%22%5D%7D%7D',400).then(function() {
+    it.skip('Get project published - invalid params', function() {
+        return requestProject.getPublishProject('?p=0').then(function(response) {
+            expect(response).to.have.status(400);
+            return requestProject.getPublishProject('?cont=*').then(function(response2) {
+                expect(response2).to.have.status(400);
+                return requestProject.get('?qery=%7B%22hardwareTags%22:%7B%22$all%22:%5B%22us%22%5D%7D%7D').then(function(response3) {
+                    expect(response3).to.have.status(400);
                     return chakram.wait();
                 });
             });
@@ -38,13 +45,16 @@ describe('Project test', function() {
     });
 
     it('Get project published - one params', function() {
-        return request.get('/project?page=1',200).then(function(response1) {
+        return requestProject.getPublishProject('?page=1').then(function(response1) {
+            expect(response1).to.have.status(200);
             expect(response1).not.have.to.json([]);
-            return request.get('/project?count=*',200).then(function(response2) {
+            return requestProject.getPublishProject('?count=*').then(function(response2) {
+                expect(response2).to.have.status(200);
                 expect(response2).have.to.json('count', function(number) {
                     expect(number).to.be.at.least(0);
                 });
-                return request.get('/project?query=%7B%22hardwareTags%22:%7B%22$all%22:%5B%22us%22%5D%7D%7D',200).then(function(response3) {
+                return requestProject.getPublishProject('?query=%7B%22hardwareTags%22:%7B%22$all%22:%5B%22us%22%5D%7D%7D',200).then(function(response3) {
+                    expect(response3).to.have.status(200);
                     expect(response3).not.have.to.json([]);
                     return chakram.wait();
                 });
@@ -56,17 +66,22 @@ describe('Project test', function() {
 
     it('Get projects of a user', function() {
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function(response) {
+        return requestUser.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
             var project1 = project.generateProjectRandom();
             var project2 = project.generateProjectRandom();
-            return request.post('/project',200,project1,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                return request.post('/project',200,project2,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                    return request.get('/project/me?page=0&pageSize=1',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response2) {
-                        expect(response2).have.to.json(function(json) {
+            return requestProject.createProject(project1,response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return requestProject.createProject(project2,response.body.token).then(function(response3) {
+                    expect(response3).to.have.status(200);
+                    return requestProject.getProjectUser('?page=0&pageSize=1',response.body.token).then(function(response4) {
+                        expect(response4).to.have.status(200);
+                        expect(response4).have.to.json(function(json) {
                             expect(json.length).to.be.equal(1);
                         });
-                        return request.get('/project/me?pageSize=5',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response3) {
-                            expect(response3).have.to.json(function(json) {
+                        return requestProject.getProjectUser('?pageSize=5',response.body.token).then(function(response5) {
+                            expect(response5).to.have.status(200);
+                            expect(response5).have.to.json(function(json) {
                                 expect(json.length).to.be.equal(2);
                             });
                             return chakram.wait();
@@ -77,11 +92,14 @@ describe('Project test', function() {
         });
     });
 
-    it('Get projects of a user - without mandatory params', function() {
+    it.skip('Get projects of a user - without mandatory params', function() {
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function(response) {
-            return request.get('/project/me?page=0',400,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                return request.get('/project/me',400,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
+        return requestUser.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
+            return requestProject.getProjectUser('?page=0',response.body.token).then(function(response2) {
+                expect(response2).to.have.status(400);
+                return requestProject.getProjectUser('',response.body.token).then(function(response3) {
+                    expect(response3).to.have.status(400);
                     return chakram.wait();
                 });
             });
@@ -90,10 +108,14 @@ describe('Project test', function() {
 
     it('Get projects of a user - token is incorrect', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
-        return request.get('/project/me',401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
-            return request.get('/project/me?page=0',401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
-                return request.get('/project/me?pageSize=1',401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
-                    return request.get('/project/me?page=0&pageSize=1',401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
+        return requestProject.getProjectUser('',token).then(function(response1) {
+            expect(response1).to.have.status(401);
+            return requestProject.getProjectUser('?page=0',token).then(function(response2) {
+                expect(response2).to.have.status(401);
+                return requestProject.getProjectUser('?pageSize=1',token).then(function(response3) {
+                    expect(response3).to.have.status(401);
+                    return requestProject.getProjectUser('?page=0&pageSize=1',token).then(function(response4) {
+                          expect(response4).to.have.status(401);
                         return chakram.wait();
                     });
                 });
@@ -104,12 +126,15 @@ describe('Project test', function() {
 //GET /project/shared
 
     it('Get shared projects of a user', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
-            return request.get('/project/shared?pageSize=1',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response2) {
+        return requestUser.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
+            return requestProject.getProjectSharedUser('?pageSize=1',response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
                 expect(response2).have.to.json(function(json) {
                     expect(json.length).to.be.equal(1);
                 });
-                return request.get('/project/shared?page=0&pageSize=3',200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response3) {
+                return requestProject.getProjectSharedUser('?page=0&pageSize=3',response.body.token).then(function(response3) {
+                    expect(response3).to.have.status(200);
                     expect(response3).have.to.json(function(json) {
                         expect(json.length).to.be.equal(3);
                     });
@@ -120,10 +145,14 @@ describe('Project test', function() {
 
     it('Get shared projects of a user - token is incorrect', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
-        return request.get('/project/shared',401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
-            return request.get('/project/shared?page=0',401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
-                return request.get('/project/shared?pageSize=1',401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
-                    return request.get('/project/shared?page=0&pageSize=1',401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
+        return requestProject.getProjectSharedUser('',token).then(function(response) {
+            expect(response).to.have.status(401);
+            return requestProject.getProjectSharedUser('?page=0',token).then(function(response2) {
+                expect(response2).to.have.status(401);
+                return requestProject.getProjectSharedUser('?pageSize=1',token).then(function(response3) {
+                    expect(response3).to.have.status(401);
+                    return requestProject.getProjectSharedUser('?page=0&pageSize=1',token).then(function(response4) {
+                        expect(response4).to.have.status(401);
                         return chakram.wait();
                     });
                 });
@@ -131,10 +160,13 @@ describe('Project test', function() {
         });
     });
 
-    it('Get projects of a user - without mandatory params', function() {
-        return request.post('/auth/local',200,config.adminLogin).then(function(response) {
-            return request.get('/project/shared?page=0',400,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                return request.get('/project/shared',400,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
+    it.skip('Get shared projects of a user - without mandatory params', function() {
+        return requestUser.login(config.adminLogin).then(function(response) {
+            expect(response).to.have.status(200);
+            return requestProject.getProjectSharedUser('?page=0',response.body.token).then(function(response2) {
+                expect(response2).to.have.status(400);
+                return requestProject.getProjectSharedUser('',response.body.token).then(function(response3) {
+                    expect(response3).to.have.status(400);
                     return chakram.wait();
                 });
             });
@@ -145,10 +177,13 @@ describe('Project test', function() {
 
     it('Get a project', function() {
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function(response) {
+        return requestUser.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
             var project1 = project.generateProjectRandom();
-            return request.post('/project',200,project1,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response2) {
-                return request.get('/project/'+response2.body,200,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response3) {
+            return requestProject.createProject(project1,response.body.token).then(function(response2) {
+                expect(response2).to.have.status(200);
+                return requestProject.getProjectById(response2.body,response.body.token).then(function(response3) {
+                    expect(response3).to.have.status(200);
                     expect(response3).not.have.to.json({});
                     chakram.wait();
                 });
@@ -159,9 +194,11 @@ describe('Project test', function() {
     it('Get a project - the project no exist', function() {
         var idRandom = new ObjectID();
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function(response) {
-            return request.get('/project/'+idRandom,404,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function() {
-                    chakram.wait();
+        return requestUser.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
+            return requestProject.getProjectById(idRandom,response.body.token).then(function(response2) {
+                expect(response2).to.have.status(404);
+                chakram.wait();
             });
         });
     });
@@ -169,10 +206,13 @@ describe('Project test', function() {
     it('Get a project - invalid token', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         var userRandom = user.generateRandomUser();
-        return request.post('/user',200,userRandom).then(function(response) {
+        return requestUser.createUser(userRandom).then(function(response) {
+            expect(response).to.have.status(200);
             var project1 = project.generateProjectRandom();
-            return request.post('/project',200,project1,{headers:{'Authorization':'Bearer '+response.body.token}}).then(function(response2) {
-                return request.get('/project/'+response2.body,401,{headers:{'Authorization':'Bearer '+token}}).then(function() {
+            return requestProject.createProject(project1,response.body.token).then(function(response2) {
+                expect(response).to.have.status(200);
+                return requestProject.getProjectById(response2.body,token).then(function(response3) {
+                    expect(response3).to.have.status(401);
                     chakram.wait();
                 });
             });
