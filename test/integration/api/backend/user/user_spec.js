@@ -71,6 +71,7 @@ describe('User test', function() {
                             expect(response4).to.have.status(200);
                             expect(response5.body[response5.body.length-1]._id).to.equal(response3.body._id);
                             id = response3.body._id;
+                            return chakram.wait();
                         });
                     });
                 });
@@ -252,6 +253,7 @@ describe('User test', function() {
                         return request.getUserBanned().then(function(response5) {
                             expect(response5).to.have.status(200);
                             expect(response5).not.to.have.json([]);
+                            return chakram.wait();
                         });
                     });
                 });
@@ -346,6 +348,7 @@ describe('User test', function() {
                     expect(response3).to.have.status(200);
                     var userMod = response3.body;
                     expect(userMod.lastName).to.equal(userRandom.lastName);
+                    return chakram.wait();
                 });
             });
         });
@@ -399,7 +402,7 @@ describe('User test', function() {
                     expect(response3).to.have.status(200);
                     return request.getUserInfo(response3.body.token).then(function(response4) {
                         expect(response4).to.have.status(200);
-                        chakram.wait();
+                        return chakram.wait();
                     });
                 });
             });
@@ -420,7 +423,7 @@ describe('User test', function() {
                         expect(response4).to.have.status(200);
                         return request.updatePassword({newPassword:config.adminLogin.password},response3.body.token).then(function(response5) {
                             expect(response5).to.have.status(200);
-                            chakram.wait();
+                            return chakram.wait();
                         });
                     });
                 });
