@@ -16,7 +16,7 @@ describe('Project test', function() {
 
 //GET /  get project published
 
-    it('Get project published - all params', function() {
+    it('bbb-552:Get project published - all params', function() {
         return requestProject.getPublishProject('?count=*&page=0&query=%7B%22hardwareTags%22:%7B%22$all%22:%5B%22us%22%5D%7D%7D').then(function(response) {
             expect(response).to.have.status(200);
             expect(response).not.have.to.json([]);
@@ -24,14 +24,14 @@ describe('Project test', function() {
         });
     });
 
-    it.skip('Get project published - without params', function() {
+    it.skip('bbb-553:Get project published - without params', function() {
         return requestProject.getPublishProject('').then(function(response) {
             expect(response).to.have.status(400);
             return chakram.wait();
         });
     });
 
-    it.skip('Get project published - invalid params', function() {
+    it.skip('bbb-554:Get project published - invalid params', function() {
         return requestProject.getPublishProject('?p=0').then(function(response) {
             expect(response).to.have.status(400);
             return requestProject.getPublishProject('?cont=*').then(function(response2) {
@@ -44,7 +44,7 @@ describe('Project test', function() {
         });
     });
 
-    it('Get project published - one params', function() {
+    it('bbb-555:Get project published - one params', function() {
         return requestProject.getPublishProject('?page=1').then(function(response1) {
             expect(response1).to.have.status(200);
             expect(response1).not.have.to.json([]);
@@ -64,7 +64,7 @@ describe('Project test', function() {
 
 //GET /project/me
 
-    it('Get projects of a user', function() {
+    it('bbb-556:Get projects of a user', function() {
         var userRandom = user.generateRandomUser();
         return requestUser.createUser(userRandom).then(function(response) {
             expect(response).to.have.status(200);
@@ -92,7 +92,7 @@ describe('Project test', function() {
         });
     });
 
-    it.skip('Get projects of a user - without mandatory params', function() {
+    it.skip('bbb-557:Get projects of a user - without mandatory params', function() {
         var userRandom = user.generateRandomUser();
         return requestUser.createUser(userRandom).then(function(response) {
             expect(response).to.have.status(200);
@@ -106,7 +106,7 @@ describe('Project test', function() {
         });
     });
 
-    it('Get projects of a user - token is incorrect', function() {
+    it('bbb-558:Get projects of a user - token is incorrect', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         return requestProject.getProjectUser('',token).then(function(response1) {
             expect(response1).to.have.status(401);
@@ -125,7 +125,7 @@ describe('Project test', function() {
 
 //GET /project/shared
 
-    it('Get shared projects of a user', function() {
+    it('bbb-559:Get shared projects of a user', function() {
         return requestUser.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             return requestProject.getProjectSharedUser('?pageSize=1',response.body.token).then(function(response2) {
@@ -143,7 +143,7 @@ describe('Project test', function() {
         });
     });
 
-    it('Get shared projects of a user - token is incorrect', function() {
+    it('bbb-560:Get shared projects of a user - token is incorrect', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         return requestProject.getProjectSharedUser('',token).then(function(response) {
             expect(response).to.have.status(401);
@@ -160,7 +160,7 @@ describe('Project test', function() {
         });
     });
 
-    it.skip('Get shared projects of a user - without mandatory params', function() {
+    it.skip('bbb-561:Get shared projects of a user - without mandatory params', function() {
         return requestUser.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             return requestProject.getProjectSharedUser('?page=0',response.body.token).then(function(response2) {
@@ -175,7 +175,7 @@ describe('Project test', function() {
 
 //GET /project/:id
 
-    it('Get a project', function() {
+    it('bbb-562:Get a project', function() {
         var userRandom = user.generateRandomUser();
         return requestUser.createUser(userRandom).then(function(response) {
             expect(response).to.have.status(200);
@@ -191,7 +191,7 @@ describe('Project test', function() {
         });
     });
 
-    it('Get a project - the project no exist', function() {
+    it('bbb-563:Get a project - the project no exist', function() {
         var idRandom = new ObjectID();
         var userRandom = user.generateRandomUser();
         return requestUser.createUser(userRandom).then(function(response) {
@@ -203,7 +203,7 @@ describe('Project test', function() {
         });
     });
 
-    it('Get a project - invalid token', function() {
+    it('bbb-564:Get a project - invalid token', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         var userRandom = user.generateRandomUser();
         return requestUser.createUser(userRandom).then(function(response) {

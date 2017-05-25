@@ -14,7 +14,7 @@ describe('User test', function() {
     var id;
 
 //HEAD /:username Check that the username exists in BBDD
-    it('The username exists',function(){
+    it('bbb:565:The username exists',function(){
         var userRandom = user.generateRandomUser();
         return request.createUser(userRandom).then(function(response) {
             expect(response).to.have.status(200);
@@ -26,7 +26,7 @@ describe('User test', function() {
         });
     });
 
-    it('The username doesnt exist',function(){
+    it('bbb:566:The username doesnt exist',function(){
         return request.checkUsername('userfakedoesntexist').then(function(response) {
             expect(response).to.have.status(204);
             expect(response).to.have.header('exists','false');
@@ -35,7 +35,7 @@ describe('User test', function() {
 
     });
 
-    it('The username has rare characters', function() {
+    it('bbb:567:The username has rare characters', function() {
         return request.checkUsername('pruebeci)()&64564¿*').then(function(response) {
             expect(response).to.have.header('exists','false');
             expect(response).to.have.status(204);
@@ -43,7 +43,7 @@ describe('User test', function() {
         });
     });
 
-    it('The username is long', function() {
+    it('bbb:568:The username is long', function() {
         return request.checkUsername(
         'pruebeci)()&64564¿*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'+
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'+
@@ -57,7 +57,7 @@ describe('User test', function() {
 
 
 //HEAD /ban
-    it('Ban an user', function() {
+    it('bbb:569:Ban an user', function() {
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             var userRandom = user.generateRandomUser();
@@ -79,7 +79,7 @@ describe('User test', function() {
         });
     });
 
-    it('Ban an user - A banned user', function() {
+    it('bbb:570:Ban an user - A banned user', function() {
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             return request.banUser(id,response.body.token).then(function(response2) {
@@ -93,7 +93,7 @@ describe('User test', function() {
         });
     });
 
-    it('Ban an user - The user doesnt exist', function() {
+    it('bbb:571:Ban an user - The user doesnt exist', function() {
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             var idRandom = new ObjectID();
@@ -108,7 +108,7 @@ describe('User test', function() {
         });
     });
 
-    it('Ban an user - Invalid token', function() {
+    it('bbb:572:Ban an user - Invalid token', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         var idRandom = new ObjectID();
         return request.banUser(idRandom,token).then(function(response) {
@@ -118,7 +118,7 @@ describe('User test', function() {
     });
 
 //HEAD /unban
-    it('Unban an user', function() {
+    it('bbb:573:Unban an user', function() {
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             return request.unbanUser(id,response.body.token).then(function(response2) {
@@ -136,7 +136,7 @@ describe('User test', function() {
         });
     });
 
-    it('Unban an user - unbanned user', function() {
+    it('bbb:574:Unban an user - unbanned user', function() {
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             return request.unbanUser(id,response.body.token).then(function(response2) {
@@ -154,7 +154,7 @@ describe('User test', function() {
         });
     });
 
-    it('Unban an user - The user doesnt exist', function() {
+    it('bbb:575:Unban an user - The user doesnt exist', function() {
         return request.login(config.adminLogin).then(function(response) {
             var idRandom = new ObjectID();
             expect(response).to.have.status(200);
@@ -173,7 +173,7 @@ describe('User test', function() {
         });
     });
 
-    it('Unban an user - Invalid token', function() {
+    it('bbb:576:Unban an user - Invalid token', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         var idRandom = new ObjectID();
         return request.unbanUser(idRandom,token).then(function(response) {
@@ -184,7 +184,7 @@ describe('User test', function() {
 
 // GET /
 
-    it('Get list of users', function() {
+    it('bbb:577:Get list of users', function() {
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             return request.getListOfUser(response.body.token).then(function(response2) {
@@ -195,7 +195,7 @@ describe('User test', function() {
         });
     });
 
-    it('Get list of users - invalid token', function() {
+    it('bbb:578:Get list of users - invalid token', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
@@ -207,7 +207,7 @@ describe('User test', function() {
     });
 
 //GET /email/:email Return id of user
-    it('Get id at email - the user exists', function() {
+    it('bbb:579:Get id at email - the user exists', function() {
         var userRandom = user.generateRandomUser();
         return request.createUser(userRandom).then(function(res) {
           expect(res).to.have.status(200);
@@ -222,7 +222,7 @@ describe('User test', function() {
         });
     });
 
-    it('Get id at email - the user doesnt exist', function() {
+    it('bbb:580:Get id at email - the user doesnt exist', function() {
         return request.getUserByEmail(encodeURIComponent('emailfakefake@emailake.es')).then(function(response) {
             expect(response).to.have.status(400);
             expect(response).to.have.json('error','This email is not registered');
@@ -230,7 +230,7 @@ describe('User test', function() {
         });
     });
 
-    it('Get id at email - the email is incorrect', function() {
+    it('bbb:581:Get id at email - the email is incorrect', function() {
         return request.getUserByEmail(encodeURIComponent('emailfakefakeemailake.es')).then(function(response) {
             expect(response).to.have.status(400);
             expect(response).to.have.json('error','This email is not registered');
@@ -240,7 +240,7 @@ describe('User test', function() {
 
 //GET /banned
 
-    it('Get banned users', function() {
+    it('bbb:582:Get banned users', function() {
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             var userRandom = user.generateRandomUser();
@@ -263,7 +263,7 @@ describe('User test', function() {
 
 //GET /me Get info for user
 
-    it('Get user information - new User', function() {
+    it('bbb:583:Get user information - new User', function() {
         var userRandom = user.generateRandomUser();
         return request.createUser(userRandom).then(function(response) {
             expect(response).to.have.status(200);
@@ -275,7 +275,7 @@ describe('User test', function() {
         });
     });
 
-    it('Get user information - old user', function() {
+    it('bbb:584:Get user information - old user', function() {
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             return request.getUserInfo(response.body.token).then(function(response2) {
@@ -286,7 +286,7 @@ describe('User test', function() {
         });
     });
 
-    it('Get user information - invalid token', function() {
+    it('bbb:585:Get user information - invalid token', function() {
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         return request.getUserInfo(token).then(function(response) {
             expect(response).to.have.status(401);
@@ -296,7 +296,7 @@ describe('User test', function() {
 
 //Get /:id Get user profile
 
-    it('Get user profile - new user', function() {
+    it('bbb:586:Get user profile - new user', function() {
         var userRandom = user.generateRandomUser();
         return request.createUser(userRandom).then(function(response) {
             expect(response).to.have.status(200);
@@ -312,7 +312,7 @@ describe('User test', function() {
         });
     });
 
-    it('Get user profile - old user', function() {
+    it('bbb:587:Get user profile - old user', function() {
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             return request.getUserInfo(response.body.token).then(function(response2) {
@@ -327,7 +327,7 @@ describe('User test', function() {
         });
     });
 
-    it('Get user profile - The user doesnt exist', function() {
+    it('bbb:588:Get user profile - The user doesnt exist', function() {
         var idRandom = new ObjectID();
         return request.getUserProfile(idRandom).then(function(response) {
             expect(response).to.have.status(404);
@@ -337,7 +337,7 @@ describe('User test', function() {
 
 //PUT /me Update user data
 
-    it('Update user data - new user', function() {
+    it('bbb:589:Update user data - new user', function() {
         var userRandom = user.generateRandomUser();
         return request.createUser(userRandom).then(function(response) {
             expect(response).to.have.status(200);
@@ -354,7 +354,7 @@ describe('User test', function() {
         });
     });
 
-    it('Update user data - old user', function() {
+    it('bbb:590:Update user data - old user', function() {
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             return request.getUserInfo(response.body.token).then(function(response2) {
@@ -378,7 +378,7 @@ describe('User test', function() {
         });
     });
 
-    it('Update user data - invalid token', function() {
+    it('bbb:591:Update user data - invalid token', function() {
         var userRandom = user.generateRandomUser();
         var token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         return request.updateUser(userRandom,token).then(function(response) {
@@ -389,7 +389,7 @@ describe('User test', function() {
 
 //PUT /me/password Update user data
 
-    it('Update user password (Logged) - new user', function() {
+    it('bbb:592:Update user password (Logged) - new user', function() {
         var userRandom = user.generateRandomUser();
         return request.createUser(userRandom).then(function(response) {
             expect(response).to.have.status(200);
@@ -409,7 +409,7 @@ describe('User test', function() {
         });
     });
 
-    it('Update user password (Logged) - old user', function() {
+    it('bbb:593:Update user password (Logged) - old user', function() {
         return request.login(config.adminLogin).then(function(response) {
             expect(response).to.have.status(200);
             var password = {
@@ -431,7 +431,7 @@ describe('User test', function() {
         });
     });
 
-    it('Update user password (Logged) - invalid token', function() {
+    it('bbb:594:Update user password (Logged) - invalid token', function() {
         var password = {
           newPassword:'aaaaaa'
         };
@@ -444,7 +444,7 @@ describe('User test', function() {
 
 //POST /
 
-    it('Create a user - valid info', function() {
+    it('bbb:595:Create a user - valid info', function() {
         var userRandom = user.generateRandomUser();
         return request.createUser(userRandom).then(function(response) {
             expect(response).to.have.status(200);
@@ -455,7 +455,7 @@ describe('User test', function() {
         });
     });
 
-    it('Create a user - the user exists', function() {
+    it('bbb:596:Create a user - the user exists', function() {
       var userRandom = user.generateRandomUser();
       return request.createUser(userRandom).then(function(response) {
           expect(response).to.have.status(200);
@@ -468,7 +468,7 @@ describe('User test', function() {
       });
     });
 
-    it('Create a user - without info', function() {
+    it('bbb:597:Create a user - without info', function() {
         return request.createUser({}).then(function(response) {
             expect(response).to.have.status(400);
             return chakram.wait();
@@ -477,7 +477,7 @@ describe('User test', function() {
 
 //POST /forgot
 
-    it('Send a recovery password email - correct email', function() {
+    it('bbb:598:Send a recovery password email - correct email', function() {
         var userRandom = user.generateRandomUser();
         return request.createUser(userRandom).then(function(response) {
             expect(response).to.have.status(200);
@@ -488,14 +488,14 @@ describe('User test', function() {
         });
     });
 
-    it('Send a recovery password email - the email doesnt exist', function() {
+    it('bbb:599:Send a recovery password email - the email doesnt exist', function() {
         return request.forgotPass({'email':'userRandomFake@fakefake.es'}).then(function(response) {
             expect(response).to.have.status(404);
             return chakram.wait();
         });
     });
 
-    it('Send a recovery password email - json parameter is incorrect', function() {
+    it('bbb:600:Send a recovery password email - json parameter is incorrect', function() {
         return request.forgotPass({'em':'userRandomFake@fakefake.es'}).then(function(response) {
             expect(response).to.have.status(404);
             return chakram.wait();
