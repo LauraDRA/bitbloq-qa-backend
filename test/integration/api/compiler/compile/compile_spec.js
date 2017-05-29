@@ -11,8 +11,10 @@ describe('Compiler test', function() {
     it('bbb-323:Compile a correct code',function() {
         return request.compiler(compile.correctCode).then(function(response) {
             expect(response).to.have.status(200);
+            expect(response.body).to.have.property('hex');
             return request.compiler(compile.correctCodebt328).then(function(response2) {
                 expect(response2).to.have.status(200);
+                expect(response2.body).to.have.property('hex');
                 return chakram.wait();
             });
         });
@@ -24,7 +26,7 @@ describe('Compiler test', function() {
         return request.compiler(compile.incorrectCode).then(function(response1) {
             expect(response1).to.have.status(200);
             expect(response1).to.comprise.of.json(compile.errorNoFile);
-            return request.post(compile.incorrectCodebt328).then(function(response2) {
+            return request.compiler(compile.incorrectCodebt328).then(function(response2) {
                 expect(response2).to.have.status(200);
                 expect(response2).to.comprise.of.json(compile.errorNoFile);
                 return chakram.wait();
@@ -70,9 +72,10 @@ describe('Compiler test', function() {
     });
 
     it('bbb-329:Compile a code twice',function() {
-        return request.compiler(compile.correctCode).then(function(response) {
+        var code = compile.correctCode;
+        return request.compiler(code).then(function(response) {
             expect(response).to.have.status(200);
-            return request.compiler(compile.correctCode).then(function(response2){
+            return request.compiler(code).then(function(response2){
                 expect(response2).to.have.status(200);
                 expect(response.body.hex).to.equal(response2.body.hex);
                 return chakram.wait();
